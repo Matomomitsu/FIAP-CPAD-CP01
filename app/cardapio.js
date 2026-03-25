@@ -17,16 +17,19 @@ export const previewItems = {
       title: "Pizza com batata frita",
       price: 7500,
       description: "Pizza grande com batata crocante",
+      image: require("../assets/images/menu/pizza_batata.png"),
     },
     {
       title: "Sanduíche natural",
       price: 1400,
       description: "Pão integral com frango e salada",
+      image: require("../assets/images/menu/sanduiche_natural.png"),
     },
     {
       title: "Combo rápido",
       price: 1990,
       description: "Hambúrguer + batata + refrigerante",
+      image: require("../assets/images/menu/combo_rapido.png"),
     },
   ],
   Bebidas: [
@@ -34,16 +37,19 @@ export const previewItems = {
       title: "Coca-Cola lata",
       price: 600,
       description: "350ml gelada",
+      image: require("../assets/images/menu/coca_lata.png"),
     },
     {
       title: "Suco natural",
       price: 850,
       description: "Laranja ou limão",
+      image: require("../assets/images/menu/suco_natural.png"),
     },
     {
       title: "Água mineral",
       price: 300,
       description: "Sem gás 500ml",
+      image: require("../assets/images/menu/agua_mineral.png"),
     },
   ],
   Doces: [
@@ -51,16 +57,19 @@ export const previewItems = {
       title: "Brigadeiro",
       price: 400,
       description: "Tradicional gourmet",
+      image: require("../assets/images/menu/brigadeiro.png"),
     },
     {
       title: "Brownie",
       price: 750,
       description: "Com chocolate meio amargo",
+      image: require("../assets/images/menu/brownie.png"),
     },
     {
       title: "Açaí 300ml",
       price: 1200,
       description: "Com granola e leite condensado",
+      image: require("../assets/images/menu/acai.png"),
     },
   ],
 };

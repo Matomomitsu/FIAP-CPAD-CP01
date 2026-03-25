@@ -1,4 +1,4 @@
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { theme } from "../styles/theme";
 
 export function FoodCard({ item, onAdd, onRemove, quantity }) {
@@ -11,14 +11,19 @@ export function FoodCard({ item, onAdd, onRemove, quantity }) {
 
   return (
     <View style={styles.container}>
-      <View style={styles.info}>
-        <Text style={styles.title}>{item.title}</Text>
-
-        {item.description && (
-          <Text style={styles.description}>{item.description}</Text>
+      <View style={styles.row}>
+        {item.image && (
+          <Image source={item.image} style={styles.image} />
         )}
+        <View style={styles.info}>
+          <Text style={styles.title}>{item.title}</Text>
 
-        <Text style={styles.price}>{formatPrice(item.price)}</Text>
+          {item.description && (
+            <Text style={styles.description}>{item.description}</Text>
+          )}
+
+          <Text style={styles.price}>{formatPrice(item.price)}</Text>
+        </View>
       </View>
 
       <View style={styles.actions}>
@@ -56,7 +61,19 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.sm,
   },
 
+  row: {
+    flexDirection: "row",
+    gap: theme.spacing.sm,
+  },
+
+  image: {
+    width: 72,
+    height: 72,
+    borderRadius: theme.radius.md,
+  },
+
   info: {
+    flex: 1,
     gap: 6,
   },
 
