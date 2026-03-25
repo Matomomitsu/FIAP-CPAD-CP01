@@ -3,12 +3,13 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { ScreenContainer } from '../components/ScreenContainer';
 import { theme } from '../styles/theme';
+import { formatPrice } from '../utils/formatPrice';
 
 export default function PedidoFinalScreen() {
   const params = useLocalSearchParams();
 
   const itens = params.itens ? JSON.parse(params.itens) : [];
-  const total = params.total || '0.00';
+  const total = params.total ? Number(params.total) : 0;
   const formaPagamento = params.formaPagamento || '';
   const numeroPedido = params.numeroPedido || '---';
 
@@ -35,13 +36,13 @@ export default function PedidoFinalScreen() {
       {/* Resumo do pedido */}
       <View style={styles.card}>
         {itens.map((item, index) => (
-          <View key={item.id}>
+          <View key={item.title}>
             <View style={styles.itemRow}>
               <Text style={styles.itemNome}>
-                {item.quantidade}x {item.nome}
+                {item.quantity}x {item.title}
               </Text>
               <Text style={styles.itemPreco}>
-                R$ {(item.preco * item.quantidade).toFixed(2).replace('.', ',')}
+                {formatPrice(item.price * item.quantity)}
               </Text>
             </View>
 
@@ -56,7 +57,7 @@ export default function PedidoFinalScreen() {
         <View style={styles.totalRow}>
           <Text style={styles.totalLabel}>Total pago</Text>
           <Text style={styles.totalValor}>
-            R$ {Number(total).toFixed(2).replace('.', ',')}
+            {formatPrice(total)}
           </Text>
         </View>
 

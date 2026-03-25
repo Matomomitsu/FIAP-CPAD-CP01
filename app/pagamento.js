@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -29,10 +29,6 @@ const FORMAS_PAGAMENTO = [
 
 export default function PagamentoScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams();
-
-  const itensPedido = params.itens ? JSON.parse(params.itens) : [];
-
   const { cart } = useCart();
   const [formaSelecionada, setFormaSelecionada] = useState(null);
   const [erro, setErro] = useState('');
@@ -53,11 +49,16 @@ export default function PagamentoScreen() {
 
     setTimeout(() => {
       const numeroPedido = Math.floor(1000 + Math.random() * 9000).toString();
+      const itensResumo = Object.values(cart).map(({ item, quantity }) => ({
+        title: item.title,
+        price: item.price,
+        quantity,
+      }));
       router.push({
         pathname: '/pedido-final',
         params: {
-          itens: JSON.stringify(itensPedido),
-          total: total.toFixed(2),
+          itens: JSON.stringify(itensResumo),
+          total: total.toString(),
           formaPagamento: formaSelecionada,
           numeroPedido,
         },
