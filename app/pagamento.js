@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { useRouter } from 'expo-router';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { PrimaryButton } from '../components/PrimaryButton';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { useCart } from '../contexts/CartContext';
+import { useOrder } from '../contexts/OrderContext';
 import { theme } from '../styles/theme';
 import { formatPrice } from '../utils/formatPrice';
 
@@ -29,12 +30,19 @@ const FORMAS_PAGAMENTO = [
 
 export default function PagamentoScreen() {
   const router = useRouter();
-  const { cart } = useCart();
+  const params = useLocalSearchParams();
+
+  const itensPedido = params.itens ? JSON.parse(params.itens) : [];
+
+  const { cart, setCart } = useCart();
+  const { setOrder } = useOrder();
   const [formaSelecionada, setFormaSelecionada] = useState(null);
   const [erro, setErro] = useState('');
   const [processando, setProcessando] = useState(false);
+  const itensCarrinho = Object.values(cart);
+  const carrinhoVazio = itensCarrinho.length === 0;
 
-  const total = Object.values(cart).reduce(
+  const total = itensCarrinho.reduce(
     (acc, { item, quantity }) => acc + item.price * quantity,
     0
   );
@@ -47,22 +55,18 @@ export default function PagamentoScreen() {
     setErro('');
     setProcessando(true);
 
+    setOrder({
+      itens: itensCarrinho,
+      total,
+      formaPagamento: formaSelecionada,
+      senha: Math.floor(1000 + Math.random() * 9000).toString(),
+    });
+
     setTimeout(() => {
-      const numeroPedido = Math.floor(1000 + Math.random() * 9000).toString();
-      const itensResumo = Object.values(cart).map(({ item, quantity }) => ({
-        title: item.title,
-        price: item.price,
-        quantity,
-      }));
       router.push({
-        pathname: '/pedido-final',
-        params: {
-          itens: JSON.stringify(itensResumo),
-          total: total.toString(),
-          formaPagamento: formaSelecionada,
-          numeroPedido,
-        },
+        pathname: '/pedido-final'
       });
+      setCart({});
       setProcessando(false);
     }, 1500);
   }
@@ -81,14 +85,15 @@ export default function PagamentoScreen() {
       </TouchableOpacity>
 
       {/* Conteúdo principal */}
-      <View style={styles.body}>
+      <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent}
+        showsVerticalScrollIndicator={false}>
 
         {/* Resumo do pedido */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Itens no Carrinho</Text>
 
           <View style={styles.card}>
-            {Object.values(cart).map(({ item, quantity }, index) => (
+            {itensCarrinho.map(({ item, quantity }, index) => (
               <View key={item.title}>
                 <View style={styles.itemRow}>
                   <Text style={styles.itemNome}>
@@ -98,7 +103,7 @@ export default function PagamentoScreen() {
                     {formatPrice(item.price * quantity)}
                   </Text>
                 </View>
-                {index < Object.values(cart).length - 1 && (
+                {index < itensCarrinho.length - 1 && (
                   <View style={styles.divider} />
                 )}
               </View>
@@ -115,64 +120,69 @@ export default function PagamentoScreen() {
           </View>
         </View>
 
-        {/* Forma de pagamento */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Forma de Pagamento</Text>
+        {!carrinhoVazio && (
+          <>
+            {/* Forma de pagamento */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Forma de Pagamento</Text>
 
-          <View style={styles.card}>
-            {FORMAS_PAGAMENTO.map((forma, index) => {
-              const selecionado = formaSelecionada === forma.id;
-              return (
-                <View key={forma.id}>
-                  <TouchableOpacity
-                    style={styles.pagamentoRow}
-                    onPress={() => {
-                      setFormaSelecionada(forma.id);
-                      setErro('');
-                    }}
-                    activeOpacity={0.7}
-                  >
-                    {/* Ícone */}
-                    <View style={[styles.iconeWrap, selecionado && styles.iconeWrapSelecionado]}>
-                      <Ionicons
-                        name={forma.icone}
-                        size={20}
-                        color={selecionado ? theme.colors.primary : theme.colors.textMuted}
-                      />
+              <View style={styles.card}>
+                {FORMAS_PAGAMENTO.map((forma, index) => {
+                  const selecionado = formaSelecionada === forma.id;
+                  return (
+                    <View key={forma.id}>
+                      <TouchableOpacity
+                        style={styles.pagamentoRow}
+                        onPress={() => {
+                          setFormaSelecionada(forma.id);
+                          setErro('');
+                        }}
+                        activeOpacity={0.7}
+                      >
+                        {/* Ícone */}
+                        <View style={[styles.iconeWrap, selecionado && styles.iconeWrapSelecionado]}>
+                          <Ionicons
+                            name={forma.icone}
+                            size={20}
+                            color={selecionado ? theme.colors.primary : theme.colors.textMuted}
+                          />
+                        </View>
+
+                        {/* Texto */}
+                        <View style={styles.pagamentoInfo}>
+                          <Text style={styles.pagamentoTitulo}>{forma.titulo}</Text>
+                        </View>
+
+                        {/* Radio */}
+                        <View style={[styles.radio, selecionado && styles.radioSelecionado]}>
+                          {selecionado && <View style={styles.radioInner} />}
+                        </View>
+                      </TouchableOpacity>
+
+                      {index < FORMAS_PAGAMENTO.length - 1 && (
+                        <View style={styles.divider} />
+                      )}
                     </View>
+                  );
+                })}
+              </View>
 
-                    {/* Texto */}
-                    <View style={styles.pagamentoInfo}>
-                      <Text style={styles.pagamentoTitulo}>{forma.titulo}</Text>
-                    </View>
+              {erro !== '' && <Text style={styles.erro}>{erro}</Text>}
+            </View>
+          </>
+        )}
 
-                    {/* Radio */}
-                    <View style={[styles.radio, selecionado && styles.radioSelecionado]}>
-                      {selecionado && <View style={styles.radioInner} />}
-                    </View>
-                  </TouchableOpacity>
+      </ScrollView>
 
-                  {index < FORMAS_PAGAMENTO.length - 1 && (
-                    <View style={styles.divider} />
-                  )}
-                </View>
-              );
-            })}
-          </View>
-
-          {erro !== '' && <Text style={styles.erro}>{erro}</Text>}
+      {!carrinhoVazio && (
+        <View style={styles.actions}>
+          <PrimaryButton
+            title={processando ? 'Processando...' : 'Confirmar Pagamento'}
+            onPress={handleConfirmar}
+            disabled={processando}
+          />
         </View>
-
-      </View>
-
-      {/* Botão confirmar */}
-      <View style={styles.actions}>
-        <PrimaryButton
-          title={processando ? 'Processando...' : 'Confirmar Pagamento'}
-          onPress={handleConfirmar}
-          disabled={processando}
-        />
-      </View>
+      )}
 
     </ScreenContainer>
   );
@@ -193,8 +203,12 @@ const styles = StyleSheet.create({
 
   body: {
     flex: 1,
-    gap: theme.spacing.lg,
   },
+  bodyContent: {
+    gap: theme.spacing.lg,
+    paddingBottom: theme.spacing.md,
+  },
+
   section: {
     gap: theme.spacing.sm,
   },
