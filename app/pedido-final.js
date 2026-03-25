@@ -5,6 +5,7 @@ import { ScreenContainer } from '../components/ScreenContainer';
 import { formatPrice } from '../utils/formatPrice';
 import { useOrder } from '../contexts/OrderContext';
 import { theme } from '../styles/theme';
+import { formatPrice } from '../utils/formatPrice';
 
 export default function PedidoFinalScreen() {
   const params = useLocalSearchParams();

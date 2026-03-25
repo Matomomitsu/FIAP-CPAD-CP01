@@ -34,8 +34,7 @@ export default function PagamentoScreen() {
 
   const itensPedido = params.itens ? JSON.parse(params.itens) : [];
 
-  const { cart, setCart } = useCart();
-  const { setOrder } = useOrder();
+  const { cart } = useCart();
   const [formaSelecionada, setFormaSelecionada] = useState(null);
   const [erro, setErro] = useState('');
   const [processando, setProcessando] = useState(false);
@@ -63,10 +62,16 @@ export default function PagamentoScreen() {
     });
 
     setTimeout(() => {
+      const numeroPedido = Math.floor(1000 + Math.random() * 9000).toString();
       router.push({
-        pathname: '/pedido-final'
+        pathname: '/pedido-final',
+        params: {
+          itens: JSON.stringify(itensPedido),
+          total: total.toFixed(2),
+          formaPagamento: formaSelecionada,
+          numeroPedido,
+        },
       });
-      setCart({});
       setProcessando(false);
     }, 1500);
   }
