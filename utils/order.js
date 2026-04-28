@@ -1,6 +1,12 @@
 import 'react-native-get-random-values';
 import { v7 as uuidv7 } from 'uuid';
 
+// Duração do estágio "preparando" antes do pedido ficar "pronto para retirada".
+// Compartilhado pela tela de pedido final (transição de status) e pela tela de
+// pagamento (agendamento das notificações locais).
+export const ORDER_PREP_DURATION_MS = 20000;
+export const ORDER_PREPARING_NOTIFICATION_OFFSET_MS = 5000;
+
 export const ORDER_STATUS = {
   IN_PROGRESS: 'em_andamento',
   COMPLETED: 'finalizado',
