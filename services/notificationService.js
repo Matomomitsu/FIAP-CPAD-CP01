@@ -70,6 +70,25 @@ export async function scheduleReadyNotification(senha, fireAt) {
   });
 }
 
+// Dispara a notificação de "pronto" imediatamente (trigger null), sem depender
+// do agendador do SO. Use isso quando o app já detectou que o pedido ficou pronto
+// em vez de confiar no alarme agendado, que pode sofrer drift no Android.
+// Cancela as notificações pendentes antes de disparar para evitar que a
+// notificação agendada (scheduleReadyNotification) duplique logo em seguida.
+export async function sendReadyNotificationNow(senha) {
+  await Notifications.cancelAllScheduledNotificationsAsync();
+  return Notifications.scheduleNotificationAsync({
+    content: {
+      title: 'Pedido pronto para retirada!',
+      body: `Senha #${senha} — dirija-se ao balcão da cantina.`,
+      sound: true,
+      priority: Notifications.AndroidNotificationPriority.MAX,
+      data: { tipo: 'pronto', senha },
+    },
+    trigger: null,
+  });
+}
+
 export async function cancelAllPendingNotifications() {
   await Notifications.cancelAllScheduledNotificationsAsync();
 }

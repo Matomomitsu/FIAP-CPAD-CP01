@@ -19,6 +19,7 @@ import {
 import { ScreenContainer } from '../../components/ScreenContainer';
 import { useOrder } from '../../contexts/OrderContext';
 import { useUser } from '../../contexts/UserContext';
+import { sendReadyNotificationNow } from '../../services/notificationService';
 import { theme } from '../../styles/theme';
 import { formatPrice } from '../../utils/formatPrice';
 import {
@@ -59,9 +60,18 @@ export default function PedidoFinalScreen() {
     }
 
     setStage('preparando');
-    const t = setTimeout(() => setStage('pronto'), ORDER_PREP_DURATION_MS - elapsed);
+    const remaining = ORDER_PREP_DURATION_MS - elapsed;
+    const t = setTimeout(() => {
+      setStage('pronto');
+      // Dispara a notificação imediatamente no momento exato em que o app
+      // detecta que o pedido ficou pronto — sem depender do agendador do SO,
+      // que pode sofrer drift de vários segundos no Android.
+      if (activeOrder?.senha) {
+        sendReadyNotificationNow(activeOrder.senha).catch(() => {});
+      }
+    }, remaining);
     return () => clearTimeout(t);
-  }, [orderStartedAt]);
+  }, [orderStartedAt, activeOrder?.senha]);
 
   // Pulse enquanto preparando
   useEffect(() => {
