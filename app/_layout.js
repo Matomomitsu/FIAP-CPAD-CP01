@@ -1,6 +1,14 @@
+import { LogBox } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
+
+// expo-notifications emite este aviso no Expo Go (SDK 53+) ao inicializar o módulo
+// nativo, mesmo quando apenas notificações locais são utilizadas. O app não usa
+// remote push notifications, portanto o aviso é inócuo e pode ser suprimido.
+LogBox.ignoreLogs([
+  'expo-notifications: Android Push notifications (remote notifications)',
+]);
 
 import { CartProvider } from '../contexts/CartContext';
 import { OrderProvider } from '../contexts/OrderContext';
