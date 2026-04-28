@@ -22,11 +22,10 @@ import { useUser } from '../../contexts/UserContext';
 import { theme } from '../../styles/theme';
 import { formatPrice } from '../../utils/formatPrice';
 import {
+  ORDER_PREP_DURATION_MS,
   PAYMENT_METHOD_LABELS,
   formatOrderDateTime,
 } from '../../utils/order';
-
-const PREP_DURATION_MS = 10000;
 
 export default function PedidoFinalScreen() {
   const router = useRouter();
@@ -38,7 +37,7 @@ export default function PedidoFinalScreen() {
     : null;
 
   const [stage, setStage] = useState(() =>
-    orderStartedAt && Date.now() - orderStartedAt >= PREP_DURATION_MS
+    orderStartedAt && Date.now() - orderStartedAt >= ORDER_PREP_DURATION_MS
       ? 'pronto'
       : 'preparando'
   );
@@ -54,13 +53,13 @@ export default function PedidoFinalScreen() {
     if (!orderStartedAt) return undefined;
 
     const elapsed = Date.now() - orderStartedAt;
-    if (elapsed >= PREP_DURATION_MS) {
+    if (elapsed >= ORDER_PREP_DURATION_MS) {
       setStage('pronto');
       return undefined;
     }
 
     setStage('preparando');
-    const t = setTimeout(() => setStage('pronto'), PREP_DURATION_MS - elapsed);
+    const t = setTimeout(() => setStage('pronto'), ORDER_PREP_DURATION_MS - elapsed);
     return () => clearTimeout(t);
   }, [orderStartedAt]);
 

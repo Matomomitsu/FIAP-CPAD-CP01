@@ -8,8 +8,19 @@ import { ScreenContainer } from '../../components/ScreenContainer';
 import { useCart } from '../../contexts/CartContext';
 import { useOrder } from '../../contexts/OrderContext';
 import { useUser } from '../../contexts/UserContext';
+import {
+  cancelAllPendingNotifications,
+  ensureAndroidChannel,
+  ensureNotificationPermissions,
+  schedulePreparingNotification,
+  scheduleReadyNotification,
+} from '../../services/notificationService';
 import { theme } from '../../styles/theme';
 import { formatPrice } from '../../utils/formatPrice';
+import {
+  ORDER_PREPARING_NOTIFICATION_OFFSET_MS,
+  ORDER_PREP_DURATION_MS,
+} from '../../utils/order';
 
 const FORMAS_PAGAMENTO = [
   {
@@ -61,7 +72,7 @@ export default function PagamentoScreen() {
     .join('')
     .toUpperCase();
 
-  function handleConfirmar() {
+  async function handleConfirmar() {
     if (!formaSelecionada) {
       setErro('Selecione uma forma de pagamento para continuar.');
       return;
@@ -69,11 +80,34 @@ export default function PagamentoScreen() {
     setErro('');
     setProcessando(true);
 
-    startOrder({
+    const novoPedido = startOrder({
       itens: itensCarrinho,
       total,
       formaPagamento: formaSelecionada,
     });
+
+    // Agenda notificações locais para acompanhar o preparo. Permissão e canal
+    // são configurados aqui para não pesar na abertura do app.
+    try {
+      await ensureAndroidChannel();
+      const granted = await ensureNotificationPermissions();
+      if (granted) {
+        await cancelAllPendingNotifications();
+        // Ancora as duas notificações no mesmo t0 (createdAt do pedido) para
+        // evitar drift entre elas se o Android atrasar o agendamento.
+        const t0 = new Date(novoPedido.createdAt).getTime();
+        await schedulePreparingNotification(
+          novoPedido.senha,
+          new Date(t0 + ORDER_PREPARING_NOTIFICATION_OFFSET_MS)
+        );
+        await scheduleReadyNotification(
+          novoPedido.senha,
+          new Date(t0 + ORDER_PREP_DURATION_MS)
+        );
+      }
+    } catch (e) {
+      console.warn('Falha ao agendar notificações:', e);
+    }
 
     setTimeout(() => {
       router.push('/tabs/pedido-final');
