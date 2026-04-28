@@ -1,12 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-import { PrimaryButton } from '../../components/PrimaryButton';
 import { ScreenContainer } from '../../components/ScreenContainer';
 import { useCart } from '../../contexts/CartContext';
 import { useOrder } from '../../contexts/OrderContext';
+import { useUser } from '../../contexts/UserContext';
 import { theme } from '../../styles/theme';
 import { formatPrice } from '../../utils/formatPrice';
 
@@ -14,17 +15,26 @@ const FORMAS_PAGAMENTO = [
   {
     id: 'pix',
     titulo: 'PIX',
+    subtitulo: 'Aprovação instantânea',
     icone: 'qr-code-outline',
+    iconBg: '#0F3D2E',
+    iconColor: '#3DDC97',
   },
   {
     id: 'cartao',
     titulo: 'Cartão de Crédito',
+    subtitulo: 'Final 4492 • Mastercard',
     icone: 'card-outline',
+    iconBg: '#3A3A3A',
+    iconColor: '#F4F4F8',
   },
   {
     id: 'saldo',
     titulo: 'Saldo na Carteira',
+    subtitulo: 'Saldo disponível: R$ 45,00',
     icone: 'wallet-outline',
+    iconBg: '#3D1320',
+    iconColor: '#ED145B',
   },
 ];
 
@@ -32,6 +42,7 @@ export default function PagamentoScreen() {
   const router = useRouter();
   const { cart, setCart } = useCart();
   const { startOrder } = useOrder();
+  const { user } = useUser();
   const [formaSelecionada, setFormaSelecionada] = useState(null);
   const [erro, setErro] = useState('');
   const [processando, setProcessando] = useState(false);
@@ -42,6 +53,13 @@ export default function PagamentoScreen() {
     (acc, { item, quantity }) => acc + item.price * quantity,
     0
   );
+
+  const iniciais = (user?.nome ?? 'A')
+    .split(' ')
+    .map((p) => p[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
 
   function handleConfirmar() {
     if (!formaSelecionada) {
@@ -66,115 +84,143 @@ export default function PagamentoScreen() {
 
   return (
     <ScreenContainer showFooter currentRoute="/tabs/pagamento">
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.headerLeft}
+          onPress={() => router.back()}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="arrow-back" size={22} color={theme.colors.text} />
+          <Text style={styles.headerTitle}>Pagamento</Text>
+        </TouchableOpacity>
 
-      {/* Botão voltar */}
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => router.back()}
-        activeOpacity={0.7}
-      >
-        <Ionicons name="arrow-back" size={20} color={theme.colors.textMuted} />
-        <Text style={styles.backText}>Voltar</Text>
-      </TouchableOpacity>
+        <View style={styles.headerRight}>
+          <Text style={styles.headerTotal}>{formatPrice(total)}</Text>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>{iniciais}</Text>
+          </View>
+        </View>
+      </View>
 
-      {/* Conteúdo principal */}
+      {/* Conteúdo */}
       <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent}
         showsVerticalScrollIndicator={false}>
 
-        {/* Resumo do pedido */}
+        {/* Resumo */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Itens no Carrinho</Text>
+          <View style={styles.resumoHeader}>
+            <Text style={styles.resumoTitle}>Resumo</Text>
+            <Text style={styles.resumoTag}>CONFIRME SEU PEDIDO</Text>
+          </View>
 
-          <View style={styles.card}>
-            {itensCarrinho.map(({ item, quantity }, index) => (
-              <View key={item.title}>
-                <View style={styles.itemRow}>
-                  <Text style={styles.itemNome}>
-                    {quantity}x {item.title}
-                  </Text>
-                  <Text style={styles.itemPreco}>
-                    {formatPrice(item.price * quantity)}
-                  </Text>
-                </View>
-                {index < itensCarrinho.length - 1 && (
-                  <View style={styles.divider} />
-                )}
-              </View>
-            ))}
-
-            <View style={styles.dividerStrong} />
-
-            <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>Total a pagar</Text>
-              <Text style={styles.totalValor}>
-                {formatPrice(total)}
+          {carrinhoVazio ? (
+            <View style={styles.emptyCard}>
+              <Ionicons name="cart-outline" size={32} color={theme.colors.textMuted} />
+              <Text style={styles.emptyTitle}>Seu carrinho está vazio</Text>
+              <Text style={styles.emptyText}>
+                Volte ao cardápio para adicionar itens ao seu pedido.
               </Text>
             </View>
-          </View>
+          ) : (
+            <View style={styles.resumoCard}>
+              {itensCarrinho.map(({ item, quantity }, index) => (
+                <View key={item.title}>
+                  <View style={styles.itemRow}>
+                    <Text style={styles.itemNome}>
+                      {quantity}x {item.title}
+                    </Text>
+                    <Text style={styles.itemPreco}>
+                      {formatPrice(item.price * quantity)}
+                    </Text>
+                  </View>
+                  {index < itensCarrinho.length - 1 && (
+                    <View style={styles.divider} />
+                  )}
+                </View>
+              ))}
+
+              <View style={styles.dividerStrong} />
+
+              <View style={styles.totalRow}>
+                <Text style={styles.totalLabel}>Total a pagar</Text>
+                <Text style={styles.totalValor}>{formatPrice(total)}</Text>
+              </View>
+            </View>
+          )}
         </View>
 
         {!carrinhoVazio && (
-          <>
-            {/* Forma de pagamento */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Forma de Pagamento</Text>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Forma de Pagamento</Text>
 
-              <View style={styles.card}>
-                {FORMAS_PAGAMENTO.map((forma, index) => {
-                  const selecionado = formaSelecionada === forma.id;
-                  return (
-                    <View key={forma.id}>
-                      <TouchableOpacity
-                        style={styles.pagamentoRow}
-                        onPress={() => {
-                          setFormaSelecionada(forma.id);
-                          setErro('');
-                        }}
-                        activeOpacity={0.7}
-                      >
-                        {/* Ícone */}
-                        <View style={[styles.iconeWrap, selecionado && styles.iconeWrapSelecionado]}>
-                          <Ionicons
-                            name={forma.icone}
-                            size={20}
-                            color={selecionado ? theme.colors.primary : theme.colors.textMuted}
-                          />
-                        </View>
-
-                        {/* Texto */}
-                        <View style={styles.pagamentoInfo}>
-                          <Text style={styles.pagamentoTitulo}>{forma.titulo}</Text>
-                        </View>
-
-                        {/* Radio */}
-                        <View style={[styles.radio, selecionado && styles.radioSelecionado]}>
-                          {selecionado && <View style={styles.radioInner} />}
-                        </View>
-                      </TouchableOpacity>
-
-                      {index < FORMAS_PAGAMENTO.length - 1 && (
-                        <View style={styles.divider} />
-                      )}
+            <View style={styles.metodosWrap}>
+              {FORMAS_PAGAMENTO.map((forma) => {
+                const selecionado = formaSelecionada === forma.id;
+                return (
+                  <TouchableOpacity
+                    key={forma.id}
+                    style={[styles.metodoCard, selecionado && styles.metodoCardSelecionado]}
+                    onPress={() => {
+                      setFormaSelecionada(forma.id);
+                      setErro('');
+                    }}
+                    activeOpacity={0.85}
+                  >
+                    <View style={[styles.metodoIcone, { backgroundColor: forma.iconBg }]}>
+                      <Ionicons name={forma.icone} size={22} color={forma.iconColor} />
                     </View>
-                  );
-                })}
-              </View>
 
-              {erro !== '' && <Text style={styles.erro}>{erro}</Text>}
+                    <View style={styles.metodoInfo}>
+                      <Text style={styles.metodoTitulo}>{forma.titulo}</Text>
+                      <Text style={styles.metodoSubtitulo}>{forma.subtitulo}</Text>
+                    </View>
+
+                    <View style={[styles.radio, selecionado && styles.radioSelecionado]}>
+                      {selecionado && <View style={styles.radioInner} />}
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
-          </>
+
+            {erro !== '' && <Text style={styles.erro}>{erro}</Text>}
+
+            <View style={styles.secureRow}>
+              <Ionicons name="lock-closed" size={12} color={theme.colors.textMuted} />
+              <Text style={styles.secureText}>AMBIENTE SEGURO E CRIPTOGRAFADO</Text>
+            </View>
+          </View>
         )}
 
       </ScrollView>
 
       {!carrinhoVazio && (
-        <View style={styles.actions}>
-          <PrimaryButton
-            title={processando ? 'Processando...' : 'Confirmar Pagamento'}
-            onPress={handleConfirmar}
-            disabled={processando}
-          />
-        </View>
+        <TouchableOpacity
+          activeOpacity={0.85}
+          disabled={processando}
+          onPress={handleConfirmar}
+          style={[styles.cta, processando && { opacity: 0.7 }]}
+        >
+          <LinearGradient
+            colors={[theme.colors.primaryAlt, theme.colors.primary, '#C90F4E']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.ctaFill}
+          >
+            {processando ? (
+              <>
+                <ActivityIndicator color={theme.colors.text} />
+                <Text style={styles.ctaText}>Processando...</Text>
+              </>
+            ) : (
+              <>
+                <Text style={styles.ctaText}>Confirmar Pagamento</Text>
+                <Ionicons name="chevron-forward" size={20} color={theme.colors.text} />
+              </>
+            )}
+          </LinearGradient>
+        </TouchableOpacity>
       )}
 
     </ScreenContainer>
@@ -182,37 +228,84 @@ export default function PagamentoScreen() {
 }
 
 const styles = StyleSheet.create({
-  // Botão voltar
-  backButton: {
+  // Header
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    marginBottom: theme.spacing.sm,
+    justifyContent: 'space-between',
+    paddingBottom: theme.spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
   },
-  backText: {
-    color: theme.colors.textMuted,
-    fontSize: 14,
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
-
-  body: {
-    flex: 1,
-  },
-  bodyContent: {
-    gap: theme.spacing.lg,
-    paddingBottom: theme.spacing.md,
-  },
-
-  section: {
-    gap: theme.spacing.sm,
-  },
-  sectionTitle: {
+  headerTitle: {
     color: theme.colors.text,
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  headerTotal: {
+    color: theme.colors.primary,
     fontSize: 16,
     fontWeight: '700',
   },
+  avatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: {
+    color: theme.colors.text,
+    fontSize: 13,
+    fontWeight: '700',
+  },
 
-  // Card
-  card: {
+  body: { flex: 1 },
+  bodyContent: {
+    gap: theme.spacing.lg,
+    paddingTop: theme.spacing.md,
+    paddingBottom: theme.spacing.md,
+  },
+
+  section: { gap: theme.spacing.sm },
+  sectionTitle: {
+    color: theme.colors.text,
+    fontSize: 18,
+    fontWeight: '700',
+  },
+
+  // Resumo
+  resumoHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+  },
+  resumoTitle: {
+    color: theme.colors.text,
+    fontSize: 26,
+    fontWeight: '800',
+  },
+  resumoTag: {
+    color: theme.colors.primary,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1,
+    marginBottom: 4,
+  },
+  resumoCard: {
     backgroundColor: theme.colors.surface,
     borderColor: theme.colors.border,
     borderRadius: theme.radius.md,
@@ -220,8 +313,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.md,
     paddingVertical: 4,
   },
-
-  // Itens do resumo
   itemRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -229,17 +320,16 @@ const styles = StyleSheet.create({
     paddingVertical: theme.spacing.sm,
   },
   itemNome: {
-    color: theme.colors.textMuted,
-    fontSize: 14,
+    color: theme.colors.text,
+    fontSize: 15,
     flex: 1,
+    fontWeight: '500',
   },
   itemPreco: {
     color: theme.colors.text,
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '700',
   },
-
-  // Dividers
   divider: {
     height: 1,
     backgroundColor: theme.colors.border,
@@ -250,8 +340,6 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.border,
     marginVertical: 4,
   },
-
-  // Total
   totalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -263,51 +351,50 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   totalValor: {
-    color: theme.colors.primary,
-    fontSize: 20,
+    color: theme.colors.text,
+    fontSize: 24,
     fontWeight: '800',
   },
 
-  // Forma de pagamento
-  pagamentoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: theme.spacing.sm,
+  // Métodos
+  metodosWrap: {
     gap: theme.spacing.sm,
   },
-  iconeWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: theme.radius.md,
-    backgroundColor: theme.colors.background,
-    borderWidth: 1,
+  metodoCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+    backgroundColor: theme.colors.surface,
     borderColor: theme.colors.border,
+    borderRadius: theme.radius.md,
+    borderWidth: 1.5,
+    padding: theme.spacing.md,
+  },
+  metodoCardSelecionado: {
+    borderColor: theme.colors.primary,
+  },
+  metodoIcone: {
+    width: 44,
+    height: 44,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  iconeWrapSelecionado: {
-    borderColor: theme.colors.primary,
-    backgroundColor: theme.colors.surface,
-  },
-  pagamentoInfo: {
-    flex: 1,
-  },
-  pagamentoTitulo: {
+  metodoInfo: { flex: 1 },
+  metodoTitulo: {
     color: theme.colors.text,
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: '700',
   },
-  pagamentoSubtitulo: {
+  metodoSubtitulo: {
     color: theme.colors.textMuted,
     fontSize: 12,
     marginTop: 2,
   },
-
-  // Radio
   radio: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     borderWidth: 2,
     borderColor: theme.colors.border,
     alignItems: 'center',
@@ -317,21 +404,74 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.primary,
   },
   radioInner: {
-    width: 9,
-    height: 9,
+    width: 10,
+    height: 10,
     borderRadius: 5,
     backgroundColor: theme.colors.primary,
   },
 
-  // Erro
   erro: {
     color: theme.colors.primary,
     fontSize: 12,
     marginTop: 4,
   },
 
-  // Ações
-  actions: {
-    gap: theme.spacing.sm,
+  secureRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: theme.spacing.sm,
+  },
+  secureText: {
+    color: theme.colors.textMuted,
+    fontSize: 11,
+    letterSpacing: 1,
+    fontWeight: '600',
+  },
+
+  // CTA
+  cta: {
+    borderRadius: theme.radius.pill,
+    overflow: 'hidden',
+    elevation: 8,
+    shadowColor: theme.colors.primary,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+  },
+  ctaFill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    paddingVertical: 20,
+    paddingHorizontal: theme.spacing.lg,
+  },
+  ctaText: {
+    color: theme.colors.text,
+    fontSize: 16,
+    fontWeight: '700',
+  },
+
+  // Empty
+  emptyCard: {
+    alignItems: 'center',
+    backgroundColor: theme.colors.surface,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radius.md,
+    borderWidth: 1,
+    gap: 8,
+    padding: theme.spacing.xl,
+  },
+  emptyTitle: {
+    color: theme.colors.text,
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  emptyText: {
+    color: theme.colors.textMuted,
+    fontSize: 13,
+    textAlign: 'center',
   },
 });
