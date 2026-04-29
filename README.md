@@ -50,11 +50,11 @@ Comparando o estado atual com o commit final do CP1 (`7a5b6d3`), as principais e
 
 ## Integrantes
 
-- Helena Barbosa Costa 
-- Henrique Mandrick 
-- Mateus Scandiuzzi Valente Tomomitsu 
-- Ryan Amorim de Castro Santana
-- Thomas Joh Kobayashi 
+- Helena Barbosa Costa - RM:562450
+- Henrique Mandrick - RM:562715
+- Mateus Scandiuzzi Valente Tomomitsu - RM:561565
+- Ryan Amorim de Castro Santana - RM:564393
+- Thomas Joh Kobayashi - RM:562758
 
 ## Como Rodar
 
