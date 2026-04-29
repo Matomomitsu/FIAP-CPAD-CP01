@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Cantina FIAP",
-    "slug": "cantina-fiap-cp1",
+    "name": "Cantina FIAP CP2",
+    "slug": "fiap-cpad-cp2-cantina-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
